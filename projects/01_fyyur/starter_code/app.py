@@ -29,13 +29,25 @@ migrate = Migrate(app, db)
 # Models.
 #----------------------------------------------------------------------------#
 
-shows_table = db.Table('Shows',
-                       db.Column('artist_id', db.Integer, db.ForeignKey(
-                           'Artist.id'), primary_key=True),
-                       db.Column('venue_id', db.Integer, db.ForeignKey(
-                           'Venue.id'), primary_key=True),
-                       db.Column('start_time', db.DateTime, nullable=False)
-                       )
+# shows_table = db.Table('Shows',
+#                        db.Column('artist_id', db.Integer, db.ForeignKey(
+#                            'Artist.id'), primary_key=True),
+#                        db.Column('venue_id', db.Integer, db.ForeignKey(
+#                            'Venue.id'), primary_key=True),
+#                        db.Column('start_time', db.DateTime, nullable=False)
+#                        )
+
+
+class Show(db.Model):
+    __tablename__ = 'Show'
+    artist_id = db.Column(db.Integer, db.ForeignKey(
+        'Artist.id'), primary_key=True)
+    venue_id = db.Column(db.Integer, db.ForeignKey(
+        'Venue.id'), primary_key=True)
+    start_time = db.Column(db.DateTime, nullable=False)
+
+    artist = db.relationship("Artist", back_populates="venues")
+    venue = db.relationship("Venue", back_populates="artists")
 
 
 class Venue(db.Model):
@@ -51,8 +63,9 @@ class Venue(db.Model):
     facebook_link = db.Column(db.String(120))
     image_link = db.Column(db.String(500))
 
-    shows = db.relationship('Artist', secondary=shows_table, lazy=True,
-                            backref=db.backref('venues', lazy=True))
+    # shows = db.relationship('Artist', secondary=shows_table, lazy=True,
+    #                         backref=db.backref('venues', lazy=True))
+    artists = db.relationship("Show", back_populates="venue")
 
     # TODO: implement any missing fields, as a database migration using Flask-Migrate #
 
@@ -68,6 +81,8 @@ class Artist(db.Model):
     genres = db.Column(db.ARRAY(db.String))
     image_link = db.Column(db.String(500))
     facebook_link = db.Column(db.String(120))
+
+    venues = db.relationship("Show", back_populates="artist")
 
     # TODO: implement any missing fields, as a database migration using Flask-Migrate #
 
@@ -493,12 +508,18 @@ def create_shows():
 def create_show_submission():
     error = False
     try:
-        statement = shows_table.insert().values(
-            artist_id=request.form['artist_id'],
-            venue_id=request.form['venue_id'],
-            start_time=request.form['start_time'])
-        db.session.execute(statement)
+        show = Show()
+        show.artist_id = request.form['artist_id']
+        show.venue_id = request.form['venue_id']
+        show.start_time = request.form['start_time']
+        db.session.add(show)
         db.session.commit()
+        # statement = shows_table.insert().values(
+        #     artist_id=request.form['artist_id'],
+        #     venue_id=request.form['venue_id'],
+        #     start_time=request.form['start_time'])
+        # db.session.execute(statement)
+        # db.session.commit()
         # a = Artist.query.get(request.form['artist_id'])
         # v = Venue.query.get(request.form['venue_id'])
         # v.secondary.start_time = request.form['start_time']
@@ -527,9 +548,7 @@ def shows():
     # displays list of shows at /shows
     # TODO: replace with real venues data.
     #       num_shows should be aggregated based on number of upcoming shows per venue.
-    venues = Venue.query.first().artists
-    all_shows = Artist.query.filter(Venue.Shows.any(id=cat_id)).all()
-    print(venues)
+    all_shows = Show.query.all()
     # data = [{}]
     # data = [{
     #     "venue_id": 1,
@@ -567,7 +586,18 @@ def shows():
     #     "artist_image_link": "https://images.unsplash.com/photo-1558369981-f9ca78462e61?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=794&q=80",
     #     "start_time": "2035-04-15T20:00:00.000Z"
     # }]
-    return render_template('pages/shows.html', shows=venues)
+    # print(all_shows[0].artist.name)
+    data = []
+    for s in all_shows:
+        data.append({
+            "venue_id": s.venue.id,
+            "venue_name": s.venue.name,
+            "artist_id": s.artist.id,
+            "artist_name": s.artist.name,
+            "artist_image_link": s.artist.image_link,
+            "start_time": str(s.start_time)
+        })
+    return render_template('pages/shows.html', shows=data)
 
 #  Update Show
 #  ----------------------------------------------------------------
