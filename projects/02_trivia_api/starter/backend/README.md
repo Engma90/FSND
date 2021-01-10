@@ -67,28 +67,170 @@ One note before you delve into your tasks: for each endpoint you are expected to
 9. Create error handlers for all expected errors including 400, 404, 422 and 500. 
 
 REVIEW_COMMENT
-```
+
 This README is missing documentation of your endpoints. Below is an example for your endpoint to get all categories. Please use it as a reference for creating your documentation and resubmit your code. 
 
 Endpoints
+```
 GET '/categories'
-GET ...
-POST ...
-DELETE ...
+GET '/questions'
+GET '/categories/{category_id}/questions'
+DELETE '/questions/{question_id}'
+POST '/questions'
+POST '/quizzes'
+```
 
 GET '/categories'
 - Fetches a dictionary of categories in which the keys are the ids and the value is the corresponding string of the category
 - Request Arguments: None
 - Returns: An object with a single key, categories, that contains a object of id: category_string key:value pairs. 
-{'1' : "Science",
-'2' : "Art",
-'3' : "Geography",
-'4' : "History",
-'5' : "Entertainment",
-'6' : "Sports"}
+
+Sample response:
+```
+{
+    'success': True,
+    'categories': 
+        {
+            '1' : "Science",
+            '2' : "Art",
+            '3' : "Geography",
+            '4' : "History",
+            '5' : "Entertainment",
+            '6' : "Sports"
+        }
+}
 
 ```
 
+GET '/questions'
+- Fetches a list of paginated (10) questions, number of total questions, categories
+
+Sample response:
+```
+{
+    'success': True,
+    'questions': [
+        {
+            'id': 1,
+            'question':  "Sample question",
+            'answer':  "Sample answer",
+            'category':  {type: "Science", id: 1},
+            'difficulty':  3
+        },
+        ...
+        ...
+    ],
+    'total_questions': 100,
+    'categories': categories
+}
+```
+
+GET '/categories/{category_id}/questions'
+- Fetches a list of paginated (10) questions, number of total questions, categories, current category
+
+Sample response:
+```
+{
+    'success': True,
+    'questions': [
+        {
+            'id': 1,
+            'question':  "Sample question",
+            'answer':  "Sample answer",
+            'category':  {type: "Science", id: 1},
+            'difficulty':  3
+        },
+        ...
+        ...
+    ],
+    'total_questions': 100,
+    'categories': categories,
+    'current_category': {type: "Science", id: 1}
+}
+```
+
+DELETE '/questions/{question_id}'
+- Deletes the question using its ID
+
+Sample response:
+```
+{
+    'success': True,
+    'deleted': 1 //id
+}
+```
+
+
+POST '/questions'
+- Create a new question, which will require the question 
+  and answer text, category, and difficulty score.
+- Can be used for search if 'searchTerm' parameter is sent
+
+Sample request for creating a question:
+```
+{
+    'question':  "Sample question",
+    'answer':  "Sample answer",
+    'category':  {type: "Science", id: 1},
+    'difficulty':  3,
+}
+```
+
+Sample response for create request:
+```
+{
+    'success': True
+}
+```
+
+Sample response for search request:
+```
+{
+    {
+        'success': True,
+        'questions': [
+            {
+                'id': 1,
+                'question':  "Sample question",
+                'answer':  "Sample answer",
+                'category':  {type: "Science", id: 1},
+                'difficulty':  3
+            },
+            ...
+            ...
+        ],
+        'total_questions': 20
+    }
+}
+```
+
+POST '/quizzes'
+- Gets questions to play the quiz.
+  This endpoint should take category and previous question parameters
+  and return a random questions within the given category,
+  if provided, and that is not one of the previous questions.
+
+Sample request:
+```
+{
+    'previous_questions': [1, 3, 22],
+    'quiz_category': 1
+}
+```
+
+Sample response:
+```
+{
+    'success': True,
+    'question': {
+        'id': 1,
+        'question':  "Sample question",
+        'answer':  "Sample answer",
+        'category':  {type: "Science", id: 1},
+        'difficulty':  3
+    }
+}
+```
 
 ## Testing
 To run the tests, run
