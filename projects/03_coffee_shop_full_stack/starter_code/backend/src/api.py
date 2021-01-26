@@ -28,6 +28,20 @@ CORS(app)
         or appropriate status code indicating reason for failure
 '''
 
+@app.route('/drinks')
+def retrieve_drinks():
+    drinks = Drink.query.all()
+    drinks_short = [drink.short() for drink in drinks]
+    print(drinks_short)
+    # if len(drinks_short) == 0:
+    #     abort(404)
+    return jsonify(
+        {
+            "success": True, 
+            "drinks": drinks_short
+        }
+    )
+
 
 '''
 @TODO implement endpoint
@@ -38,6 +52,20 @@ CORS(app)
         or appropriate status code indicating reason for failure
 '''
 
+@app.route('/drinks-detail')
+@requires_auth('get:drinks-detail')
+def retrieve_drinks_detail():
+    try:
+        drinks = Drink.query.all()
+        drinks_long = [drink.long() for drink in drinks]
+        return jsonify(
+            {
+                "success": True, 
+                "drinks": drinks_long
+            }
+        )
+    except Exception as exp:
+        abort(422)
 
 '''
 @TODO implement endpoint
@@ -49,6 +77,26 @@ CORS(app)
         or appropriate status code indicating reason for failure
 '''
 
+@app.route('/drinks', methods=['POST'])
+@requires_auth('post:drinks')
+def create_drink():
+    body = request.get_json()
+    new_title = body.get('title', None)
+    new_recipe = body.get('recipe', None)
+
+    if new_recipe:
+        new_recipe = str(new_recipe).replace("\'", "\"")
+    try:
+        drink = Drink(title=new_title, recipe=new_recipe)
+        drink.insert()
+
+        return jsonify({
+            'success': True,
+            'drinks': [drink.long()]
+        })
+
+    except Exception as exp:
+        abort(422)
 
 '''
 @TODO implement endpoint
@@ -62,6 +110,30 @@ CORS(app)
         or appropriate status code indicating reason for failure
 '''
 
+@app.route('/drinks/<int:drink_id>', methods=['PATCH'])
+@requires_auth('patch:drinks')
+def update_drink(drink_id):
+    body = request.get_json()
+    try:
+        drink = Drink.query.filter(Drink.id == drink_id).one_or_none()
+        if drink is None:
+            abort(404)
+
+        if 'title' in body:
+            drink.title = body.get('title')
+
+        if 'recipe' in body:
+            drink.recipe = str(body.get('recipe')).replace("\'", "\"")
+
+        drink.update()
+
+        return jsonify({
+            'success': True,
+            'drinks': [drink.long()]
+        })
+    except Exception as exp:
+        abort(422)
+
 
 '''
 @TODO implement endpoint
@@ -73,7 +145,24 @@ CORS(app)
     returns status code 200 and json {"success": True, "delete": id} where id is the id of the deleted record
         or appropriate status code indicating reason for failure
 '''
+@app.route('/drinks/<int:drink_id>', methods=['DELETE'])
+@requires_auth('delete:drinks')
+def delete_drink(drink_id):
+    try:
+        drink = Drink.query.filter(Drink.id == drink_id).one_or_none()
 
+        if drink is None:
+            abort(404)
+
+        drink.delete()
+
+        return jsonify({
+            'success': True,
+            'delete': drink_id
+        })
+
+    except Exception as exp:
+        abort(422)
 
 ## Error Handling
 '''
@@ -102,9 +191,47 @@ def unprocessable(error):
 @TODO implement error handler for 404
     error handler should conform to general task above 
 '''
+@app.errorhandler(404)
+def not_found(error):
+    return jsonify({
+        "success": False,
+        "error": 404,
+        "message": "resource not found"
+    }), 404
+
+@app.errorhandler(400)
+def bad_request(error):
+    return jsonify({
+        "success": False,
+        "error": 400,
+        "message": "bad request"
+    }), 400
+
+@app.errorhandler(500)
+def server_error(error):
+    return jsonify({
+        "success": False,
+        "error": 500,
+        "message": "server error"
+    }), 500
 
 
 '''
 @TODO implement error handler for AuthError
     error handler should conform to general task above 
 '''
+@app.errorhandler(401)
+def unauthorized(error):
+    return jsonify({
+        "success": False,
+        "error": 401,
+        "message": "Unauthorized"
+    }), 401
+
+@app.errorhandler(403)
+def forbidden(error):
+    return jsonify({
+        "success": False,
+        "error": 403,
+        "message": "Forbidden"
+    }), 403
