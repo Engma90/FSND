@@ -3,7 +3,7 @@ from flask import request, _request_ctx_stack
 from functools import wraps
 from jose import jwt
 from urllib.request import urlopen
-from flask import abort
+from flask import abort, Response
 
 AUTH0_DOMAIN = 'auth-server477.us.auth0.com'
 ALGORITHMS = ['RS256']
@@ -182,12 +182,9 @@ def requires_auth(permission=''):
     def requires_auth_decorator(f):
         @wraps(f)
         def wrapper(*args, **kwargs):
-            try:
-                token = get_token_auth_header()
-                payload = verify_decode_jwt(token)
-                check_permissions(permission, payload)
-            except AuthError as auth_exp:
-                abort(auth_exp.status_code)
+            token = get_token_auth_header()
+            payload = verify_decode_jwt(token)
+            check_permissions(permission, payload)
             return f(*args, **kwargs)
 
         return wrapper

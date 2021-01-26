@@ -243,19 +243,10 @@ def server_error(error):
 '''
 
 
-@app.errorhandler(401)
-def unauthorized(error):
+@app.errorhandler(AuthError)
+def unauthorized(e):
     return jsonify({
         "success": False,
-        "error": 401,
-        "message": "Unauthorized"
-    }), 401
-
-
-@app.errorhandler(403)
-def forbidden(error):
-    return jsonify({
-        "success": False,
-        "error": 403,
-        "message": "Forbidden"
-    }), 403
+        "error": e.status_code,
+        "message": e.error
+    }), e.status_code
